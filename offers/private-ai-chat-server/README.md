@@ -61,13 +61,17 @@ x-process-time: 0
 curl http://localhost:11434/api/tags
 ```
 
-Result:
+Result at first checkpoint:
 
 ```json
 {"models":[]}
 ```
 
-This confirms Ollama is running. No models had been pulled at this checkpoint.
+Later checkpoint after pulling a model:
+
+```json
+{"models":[{"name":"llama3.2:3b","model":"llama3.2:3b","modified_at":"2026-04-27T22:00:42.134683884Z","size":2019393189,"digest":"a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72","details":{"parent_model":"","format":"gguf","family":"llama","families":["llama"],"parameter_size":"3.2B","quantization_level":"Q4_K_M"}}]}
+```
 
 ## Confirmed listening ports
 
@@ -146,10 +150,66 @@ volumes:
   open_webui_data:
 ```
 
+## Release decision framework
+
+The aim is to avoid endless feature creep. This image should stop at a clear **Version 1.0** once it meets the minimum release criteria.
+
+### Option A: Continue build
+
+Use this only for features required before a customer can safely use the VM.
+
+Recommended additions before listing:
+
+1. Add a systemd service wrapper for the Compose stack.
+2. Add a first-run/readme guide in `/opt/alsourillc/private-ai-chat/README.md`.
+3. Add a simple health-check script.
+4. Confirm the stack survives reboot.
+5. Decide whether `llama3.2:3b` should remain preloaded or be removed before capture.
+
+Do not add advanced features such as multi-node deployment, billing, user analytics, Entra ID, RAG, document upload pipelines, or custom dashboards to Version 1.0. Those should become separate offers or later versions.
+
+### Option B: Marketplace-ready capture
+
+Move to image capture when the following are true:
+
+- Open WebUI returns HTTP `200` locally.
+- Open WebUI is reachable through the intended Azure NSG rule.
+- Ollama is bound only to `127.0.0.1:11434`.
+- UFW is active.
+- Docker containers restart after VM reboot.
+- No personal Open WebUI admin account remains in the image, unless intentionally documented for a private/test image.
+- No real secrets remain in `.env`.
+- Build evidence is saved in this repository.
+- Azure Linux Agent deprovisioning is performed before image capture.
+
+### Option C: Monetisation/product layer
+
+Do not include this in Version 1.0.
+
+Examples:
+
+- API key billing
+- Usage metering
+- Customer dashboards
+- Stripe integration
+- Entra ID integration
+- Central licensing
+- Support portal integration
+
+These are valuable, but they slow down the first Marketplace listing. They should be planned after the first clean VM offer is live.
+
+## Recommended Version 1.0 stop line
+
+For ALSOURI LLC, the correct stop line for this first image is:
+
+> Ubuntu server + Docker + Ollama + Open WebUI + secure local Ollama binding + firewall + reboot persistence + clear documentation.
+
+Once that is done, stop adding features and prepare the Azure Compute Gallery image. Start the next project as a separate offer rather than turning this one into a large, unclear bundle.
+
 ## Next recommended steps
 
-1. Restrict Azure NSG inbound rule for port `3000` to a trusted source IP during testing.
-2. Pull a small test model, for example `llama3.2:3b`.
-3. Test chat through Open WebUI.
-4. Decide whether to keep or remove preloaded models before image capture.
+1. Add the systemd service wrapper.
+2. Confirm reboot persistence.
+3. Browser-test Open WebUI through Azure NSG.
+4. Decide whether to include or remove `llama3.2:3b` from the final image.
 5. Prepare Marketplace-safe cleanup and deprovisioning steps before Azure Compute Gallery capture.
