@@ -1,0 +1,193 @@
+#cloud-config
+# ALSOURI LLC - Private AI Chat Server
+# Production thin-image cloud-init for Azure Marketplace capture.
+# Purpose: prepare the VM without pulling/running container images before capture.
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - ufw
+  - jq
+
+write_files:
+  - path: /opt/alsourillc/private-ai-chat/.env
+    owner: root:root
+    permissions: '0600'
+    content: |
+      COMPOSE_PROJECT_NAME=alsourillc-private-ai-chat
+      OPEN_WEBUI_PORT=3000
+      OLLAMA_PORT=11434
+      WEBUI_SECRET_KEY=change-this-after-deployment
+      OLLAMA_BASE_URL=http://ollama:11434
+
+  - path: /opt/alsourillc/private-ai-chat/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        ollama:
+          image: ollama/ollama:latest
+          container_name: alsourillc-ollama
+          restart: unless-stopped
+          ports:
+            - "127.0.0.1:${OLLAMA_PORT}:11434"
+          volumes:
+            - ollama_data:/root/.ollama
+
+        open-webui:
+          image: ghcr.io/open-webui/open-webui:main
+          container_name: alsourillc-open-webui
+          restart: unless-stopped
+          depends_on:
+            - ollama
+          ports:
+            - "${OPEN_WEBUI_PORT}:8080"
+          environment:
+            - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+            - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+          volumes:
+            - open_webui_data:/app/backend/data
+
+      volumes:
+        ollama_data:
+        open_webui_data:
+
+  - path: /opt/alsourillc/private-ai-chat/scripts/start.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/alsourillc/private-ai-chat
+      docker compose up -d
+      docker compose ps
+
+  - path: /opt/alsourillc/private-ai-chat/scripts/stop.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/alsourillc/private-ai-chat
+      docker compose down
+
+  - path: /opt/alsourillc/private-ai-chat/scripts/status.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/alsourillc/private-ai-chat
+      echo "=== systemd ==="
+      systemctl status alsourillc-private-ai-chat.service --no-pager || true
+      echo
+      echo "=== docker compose config ==="
+      docker compose config --quiet && echo "Compose config: OK" || echo "Compose config: FAILED"
+      echo
+      echo "=== docker containers ==="
+      docker ps || true
+      echo
+      echo "=== ports ==="
+      ss -tulpn | grep -E '3000|11434' || true
+
+  - path: /opt/alsourillc/private-ai-chat/scripts/logs.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/alsourillc/private-ai-chat
+      docker compose logs -f --tail=200
+
+  - path: /opt/alsourillc/private-ai-chat/README.md
+    owner: root:root
+    permissions: '0644'
+    content: |
+      # ALSOURI LLC Private AI Chat Server
+
+      This VM provides a private AI chat server configuration using Open WebUI and Ollama.
+
+      ## Important first-run note
+
+      For Marketplace image cleanliness, container images are not pre-pulled in the captured image.
+      On first boot/deployment, start the service to pull and run the containers:
+
+      sudo systemctl start alsourillc-private-ai-chat.service
+
+      ## Web UI
+
+      http://<vm-public-ip>:3000
+
+      Azure NSG must allow inbound TCP 3000.
+
+      ## Security
+
+      Open WebUI is exposed on TCP 3000.
+      Ollama is bound locally to 127.0.0.1:11434 and should not be opened publicly.
+
+      ## Service management
+
+      sudo systemctl status alsourillc-private-ai-chat.service
+      sudo systemctl start alsourillc-private-ai-chat.service
+      sudo systemctl stop alsourillc-private-ai-chat.service
+      sudo systemctl restart alsourillc-private-ai-chat.service
+
+      ## Health/status
+
+      /opt/alsourillc/private-ai-chat/scripts/status.sh
+
+      ## Models
+
+      No model is preloaded. After the containers are running, pull a model such as:
+
+      docker exec -it alsourillc-ollama ollama pull llama3.2:3b
+
+  - path: /etc/systemd/system/alsourillc-private-ai-chat.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=ALSOURI LLC Private AI Chat Server
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      WorkingDirectory=/opt/alsourillc/private-ai-chat
+      ExecStart=/usr/bin/docker compose up -d
+      ExecStop=/usr/bin/docker compose down
+      ExecReload=/usr/bin/docker compose restart
+      TimeoutStartSec=0
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /opt/alsourillc/private-ai-chat/scripts
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker msalsouri || true
+  - systemctl daemon-reload
+  - systemctl enable alsourillc-private-ai-chat.service
+  - ufw allow OpenSSH
+  - ufw allow 3000/tcp
+  - ufw deny 11434/tcp
+  - ufw --force enable
+  - docker --version > /opt/alsourillc/private-ai-chat/docker-version.txt
+  - docker compose version > /opt/alsourillc/private-ai-chat/docker-compose-version.txt
+  - cd /opt/alsourillc/private-ai-chat && docker compose config --quiet
+  - echo "ALSOURI LLC Private AI Chat thin cloud-init completed at $(date -u). Containers intentionally not started before image capture." > /opt/alsourillc/private-ai-chat/cloud-init-complete.txt
+
+final_message: "ALSOURI LLC Private AI Chat thin provisioning complete. Containers were intentionally not started."
