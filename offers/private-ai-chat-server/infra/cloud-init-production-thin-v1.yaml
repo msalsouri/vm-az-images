@@ -92,6 +92,9 @@ write_files:
       echo "=== docker containers ==="
       docker ps || true
       echo
+      echo "=== docker images ==="
+      docker images || true
+      echo
       echo "=== ports ==="
       ss -tulpn | grep -E '3000|11434' || true
 
@@ -115,9 +118,9 @@ write_files:
       ## Important first-run note
 
       For Marketplace image cleanliness, container images are not pre-pulled in the captured image.
-      On first boot/deployment, start the service to pull and run the containers:
+      On first use after deployment, enable and start the service to pull and run the containers:
 
-      sudo systemctl start alsourillc-private-ai-chat.service
+      sudo systemctl enable --now alsourillc-private-ai-chat.service
 
       ## Web UI
 
@@ -133,7 +136,7 @@ write_files:
       ## Service management
 
       sudo systemctl status alsourillc-private-ai-chat.service
-      sudo systemctl start alsourillc-private-ai-chat.service
+      sudo systemctl enable --now alsourillc-private-ai-chat.service
       sudo systemctl stop alsourillc-private-ai-chat.service
       sudo systemctl restart alsourillc-private-ai-chat.service
 
@@ -180,7 +183,7 @@ runcmd:
   - systemctl enable --now docker
   - usermod -aG docker msalsouri || true
   - systemctl daemon-reload
-  - systemctl enable alsourillc-private-ai-chat.service
+  - systemctl disable alsourillc-private-ai-chat.service || true
   - ufw allow OpenSSH
   - ufw allow 3000/tcp
   - ufw deny 11434/tcp
@@ -188,6 +191,8 @@ runcmd:
   - docker --version > /opt/alsourillc/private-ai-chat/docker-version.txt
   - docker compose version > /opt/alsourillc/private-ai-chat/docker-compose-version.txt
   - cd /opt/alsourillc/private-ai-chat && docker compose config --quiet
-  - echo "ALSOURI LLC Private AI Chat thin cloud-init completed at $(date -u). Containers intentionally not started before image capture." > /opt/alsourillc/private-ai-chat/cloud-init-complete.txt
+  - docker ps > /opt/alsourillc/private-ai-chat/docker-ps-before-capture.txt
+  - docker images > /opt/alsourillc/private-ai-chat/docker-images-before-capture.txt
+  - echo "ALSOURI LLC Private AI Chat thin cloud-init completed at $(date -u). App service intentionally disabled and containers intentionally not started before image capture." > /opt/alsourillc/private-ai-chat/cloud-init-complete.txt
 
-final_message: "ALSOURI LLC Private AI Chat thin provisioning complete. Containers were intentionally not started."
+final_message: "ALSOURI LLC Private AI Chat thin provisioning complete. App service disabled; containers not started."
