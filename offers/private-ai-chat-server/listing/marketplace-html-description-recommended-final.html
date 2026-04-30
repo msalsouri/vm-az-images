@@ -1,20 +1,20 @@
 <h2>Private AI Chat Server on Ubuntu 24.04 LTS</h2>
 
-<p><strong>Private AI Chat Server</strong> is a ready-to-use Azure virtual machine image designed to help teams deploy a self-hosted AI chat environment quickly and consistently. It combines Ubuntu 24.04 LTS, Docker, Open WebUI, and Ollama into a clean server-based deployment that can be launched on Azure without manually assembling the stack.</p>
+<p><strong>Private AI Chat Server</strong> is a ready-to-use Azure VM image for deploying a self-hosted AI chat environment quickly. It combines Ubuntu 24.04 LTS, Docker, Open WebUI, and Ollama into a clean server-based deployment.</p>
 
 <h3>What is this?</h3>
 
-<p>This offer provides a preconfigured private AI chat server. Open WebUI delivers a browser-based chat interface, while Ollama provides the local model runtime. The VM is configured so that the chat interface is available through the web UI, while the Ollama backend is bound locally for improved security.</p>
+<p>This offer provides a preconfigured private AI chat server. Open WebUI delivers the browser-based chat interface, while Ollama provides the local model runtime. The chat interface is available through the web UI, while the Ollama backend is bound locally for improved security.</p>
 
-<p>No large language model is preloaded in this image. After deployment, customers can choose and pull the Ollama-compatible model that best fits their needs, VM size, licensing requirements, and performance expectations.</p>
+<p>No large language model is preloaded. After deployment, customers can choose and pull the Ollama-compatible model that fits their VM size, licensing requirements, and performance needs.</p>
 
 <h3>First-run instructions</h3>
 
-<p>For security and Marketplace compliance, the application is not started automatically in the captured image. After deploying the VM, complete the following steps:</p>
+<p>For security and Marketplace compliance, the application is not started automatically in the captured image. After deploying the VM:</p>
 
 <ol>
   <li>Allow inbound TCP port <strong>3000</strong> in your Azure Network Security Group.</li>
-  <li>Connect to the virtual machine using SSH.</li>
+  <li>Connect to the VM using SSH.</li>
   <li>Start the application service:</li>
 </ol>
 
@@ -22,15 +22,15 @@
 
 <p>The first startup may take a few minutes while Docker pulls the required containers.</p>
 
-<p>Once started, access the web interface:</p>
+<p>Access the web interface:</p>
 
 <pre>http://&lt;your-vm-public-ip&gt;:3000</pre>
 
-<p>Check service status if needed:</p>
+<p>Check service status:</p>
 
 <pre>sudo systemctl status alsourillc-private-ai-chat.service</pre>
 
-<p>To install a model:</p>
+<p>Install a model:</p>
 
 <pre>docker exec -it alsourillc-ollama ollama pull llama3.2:3b</pre>
 
@@ -46,21 +46,19 @@
 
 <h3>Recommended VM sizing</h3>
 
-<p>VM size depends on the model you choose and the number of users. For a first test deployment, start with a modest general-purpose VM and scale up if needed.</p>
+<p>VM size depends on the model and number of users. Start modestly and scale up if needed.</p>
 
 <ul>
-  <li><strong>Basic testing:</strong> 2 vCPU and 8 GB RAM for small models and light usage.</li>
-  <li><strong>Recommended starting point:</strong> 4 vCPU and 16 GB RAM for a smoother Open WebUI and Ollama experience.</li>
-  <li><strong>Larger models or heavier use:</strong> 8+ vCPU and 32 GB+ RAM, or a suitable GPU-enabled VM where model performance requires it.</li>
+  <li><strong>Basic testing:</strong> 2 vCPU and 8 GB RAM.</li>
+  <li><strong>Recommended start:</strong> 4 vCPU and 16 GB RAM.</li>
+  <li><strong>Larger models:</strong> 8+ vCPU and 32 GB+ RAM, or a suitable GPU-enabled VM.</li>
 </ul>
 
-<p>Customers should select a VM size appropriate for their chosen Ollama model, expected concurrency, and performance requirements.</p>
+<p>Select a VM size appropriate for the chosen Ollama model, expected concurrency, and performance requirements.</p>
 
 <h3>What problem does it solve?</h3>
 
-<p>Building a private AI chat environment manually can involve installing Docker, configuring containers, exposing ports, securing the backend, and ensuring services persist after reboot. This image removes that complexity by providing a tested, repeatable baseline.</p>
-
-<p>It is especially useful for teams that want to experiment with self-hosted AI chat without committing to complex architectures such as Kubernetes.</p>
+<p>Building a private AI chat environment manually can involve installing Docker, configuring containers, exposing ports, securing the backend, and ensuring services persist after reboot. This image provides a tested, repeatable baseline.</p>
 
 <h3>Who is it for?</h3>
 
@@ -69,19 +67,19 @@
   <li>IT administrators evaluating private AI deployments</li>
   <li>Consultants delivering AI proof-of-concepts</li>
   <li>Small teams exploring local LLM workflows</li>
-  <li>Training labs and internal innovation environments</li>
+  <li>Training labs and innovation environments</li>
 </ul>
 
 <h3>Why use this image?</h3>
 
 <ul>
   <li>Ubuntu 24.04 LTS base system</li>
-  <li>Open WebUI ready for browser-based AI interaction</li>
-  <li>Ollama installed for local model execution</li>
-  <li>Docker Compose architecture for simplicity</li>
+  <li>Open WebUI for browser-based AI interaction</li>
+  <li>Ollama for local model execution</li>
+  <li>Docker Compose architecture</li>
   <li>Systemd service for controlled startup and reboot persistence</li>
   <li>Secure design with Ollama bound to localhost</li>
-  <li>No preloaded model, giving customers full flexibility and compliance control</li>
+  <li>No preloaded model, giving customers flexibility and compliance control</li>
 </ul>
 
 <h3>Typical use cases</h3>
@@ -100,7 +98,7 @@
 
 <p>Support includes help with accessing the interface, verifying services, firewall configuration, and selecting appropriate models.</p>
 
-<p>Customers remain responsible for Azure infrastructure, Azure Network Security Group configuration, VM sizing, model licensing, data governance, and production hardening.</p>
+<p>Customers remain responsible for Azure infrastructure, Network Security Group configuration, VM sizing, model licensing, data governance, and production hardening.</p>
 
 <h3>Important note</h3>
 
