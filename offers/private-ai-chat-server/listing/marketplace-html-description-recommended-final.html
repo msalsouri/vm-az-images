@@ -36,13 +36,25 @@
 
 <h3>Deploy from Azure Marketplace</h3>
 
-<p><strong>Ready to deploy? Use the link below to launch this VM image in Azure:</strong></p>
+<p><strong>Ready to deploy? Use the button below to launch this VM image in Azure:</strong></p>
 
 <p>
   <a href="https://portal.azure.com/#create/alsourillc.private-ai-chat-server-on-ubuntu-2404-ltsprivate-ai-chat-ubuntu-2404" target="_blank">
-    <strong>[ Deploy Now on Azure ]</strong>
+    <img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" />
   </a>
 </p>
+
+<h3>Recommended VM sizing</h3>
+
+<p>VM size depends on the model you choose and the number of users. For a first test deployment, start with a modest general-purpose VM and scale up if needed.</p>
+
+<ul>
+  <li><strong>Basic testing:</strong> 2 vCPU and 8 GB RAM for small models and light usage.</li>
+  <li><strong>Recommended starting point:</strong> 4 vCPU and 16 GB RAM for a smoother Open WebUI and Ollama experience.</li>
+  <li><strong>Larger models or heavier use:</strong> 8+ vCPU and 32 GB+ RAM, or a suitable GPU-enabled VM where model performance requires it.</li>
+</ul>
+
+<p>Customers should select a VM size appropriate for their chosen Ollama model, expected concurrency, and performance requirements.</p>
 
 <h3>What problem does it solve?</h3>
 
