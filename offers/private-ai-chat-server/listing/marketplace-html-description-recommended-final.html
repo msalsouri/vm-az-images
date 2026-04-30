@@ -1,0 +1,95 @@
+<h2>Private AI Chat Server on Ubuntu 24.04 LTS</h2>
+
+<p><strong>Private AI Chat Server</strong> is a ready-to-use Azure virtual machine image designed to help teams deploy a self-hosted AI chat environment quickly and consistently. It combines Ubuntu 24.04 LTS, Docker, Open WebUI, and Ollama into a clean server-based deployment that can be launched on Azure without manually assembling the stack.</p>
+
+<h3>What is this?</h3>
+
+<p>This offer provides a preconfigured private AI chat server. Open WebUI delivers a browser-based chat interface, while Ollama provides the local model runtime. The VM is configured so that the chat interface is available through the web UI, while the Ollama backend is bound locally for improved security.</p>
+
+<p>No large language model is preloaded in this image. After deployment, customers can choose and pull the Ollama-compatible model that best fits their needs, VM size, licensing requirements, and performance expectations.</p>
+
+<h3>First-run instructions</h3>
+
+<p>For security and Marketplace compliance, the application is not started automatically in the captured image. After deploying the VM, complete the following steps:</p>
+
+<ol>
+  <li>Allow inbound TCP port <strong>3000</strong> in your Azure Network Security Group.</li>
+  <li>Connect to the virtual machine using SSH.</li>
+  <li>Start the application service:</li>
+</ol>
+
+<pre>sudo systemctl enable --now alsourillc-private-ai-chat.service</pre>
+
+<p>The first startup may take a few minutes while Docker pulls the required containers.</p>
+
+<p>Once started, access the web interface:</p>
+
+<pre>http://&lt;your-vm-public-ip&gt;:3000</pre>
+
+<p>Check service status if needed:</p>
+
+<pre>sudo systemctl status alsourillc-private-ai-chat.service</pre>
+
+<p>To install a model:</p>
+
+<pre>docker exec -it alsourillc-ollama ollama pull llama3.2:3b</pre>
+
+<h3>Deploy from Azure Marketplace</h3>
+
+<p><strong>Ready to deploy? Use the link below to launch this VM image in Azure:</strong></p>
+
+<p>
+  <a href="https://portal.azure.com/#create/alsourillc.private-ai-chat-server-on-ubuntu-2404-ltsprivate-ai-chat-ubuntu-2404" target="_blank">
+    <strong>[ Deploy Now on Azure ]</strong>
+  </a>
+</p>
+
+<h3>What problem does it solve?</h3>
+
+<p>Building a private AI chat environment manually can involve installing Docker, configuring containers, exposing ports, securing the backend, and ensuring services persist after reboot. This image removes that complexity by providing a tested, repeatable baseline.</p>
+
+<p>It is especially useful for teams that want to experiment with self-hosted AI chat without committing to complex architectures such as Kubernetes.</p>
+
+<h3>Who is it for?</h3>
+
+<ul>
+  <li>Developers building AI prototypes</li>
+  <li>IT administrators evaluating private AI deployments</li>
+  <li>Consultants delivering AI proof-of-concepts</li>
+  <li>Small teams exploring local LLM workflows</li>
+  <li>Training labs and internal innovation environments</li>
+</ul>
+
+<h3>Why use this image?</h3>
+
+<ul>
+  <li>Ubuntu 24.04 LTS base system</li>
+  <li>Open WebUI ready for browser-based AI interaction</li>
+  <li>Ollama installed for local model execution</li>
+  <li>Docker Compose architecture for simplicity</li>
+  <li>Systemd service for controlled startup and reboot persistence</li>
+  <li>Secure design with Ollama bound to localhost</li>
+  <li>No preloaded model, giving customers full flexibility and compliance control</li>
+</ul>
+
+<h3>Typical use cases</h3>
+
+<ul>
+  <li>Private AI chat proof-of-concepts</li>
+  <li>Internal AI assistants</li>
+  <li>Developer experimentation</li>
+  <li>Training and labs</li>
+  <li>Foundation for RAG or AI platforms</li>
+</ul>
+
+<h3>Support</h3>
+
+<p>ALSOURI LLC provides support for deployment guidance, first-run configuration, service validation, and general VM usage related to this image.</p>
+
+<p>Support includes help with accessing the interface, verifying services, firewall configuration, and selecting appropriate models.</p>
+
+<p>Customers remain responsible for Azure infrastructure, Azure Network Security Group configuration, VM sizing, model licensing, data governance, and production hardening.</p>
+
+<h3>Important note</h3>
+
+<p>This image does not include a preloaded LLM model. After deployment, start the service and pull a model suitable for your VM size and workload.</p>
