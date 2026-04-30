@@ -1,0 +1,198 @@
+#cloud-config
+# Home & Office Improvements Ltd - Ollama with OpenWebUI on Ubuntu 24.04 LTS
+# Production thin-image cloud-init for Azure Marketplace capture.
+# Purpose: prepare the VM without pulling/running container images before capture.
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - ufw
+  - jq
+
+write_files:
+  - path: /opt/hoiltd/ollama-openwebui/.env
+    owner: root:root
+    permissions: '0600'
+    content: |
+      COMPOSE_PROJECT_NAME=hoiltd-ollama-openwebui
+      OPEN_WEBUI_PORT=3000
+      OLLAMA_PORT=11434
+      WEBUI_SECRET_KEY=change-this-after-deployment
+      OLLAMA_BASE_URL=http://ollama:11434
+
+  - path: /opt/hoiltd/ollama-openwebui/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        ollama:
+          image: ollama/ollama:latest
+          container_name: hoiltd-ollama
+          restart: unless-stopped
+          ports:
+            - "127.0.0.1:${OLLAMA_PORT}:11434"
+          volumes:
+            - ollama_data:/root/.ollama
+
+        open-webui:
+          image: ghcr.io/open-webui/open-webui:main
+          container_name: hoiltd-open-webui
+          restart: unless-stopped
+          depends_on:
+            - ollama
+          ports:
+            - "${OPEN_WEBUI_PORT}:8080"
+          environment:
+            - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+            - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+          volumes:
+            - open_webui_data:/app/backend/data
+
+      volumes:
+        ollama_data:
+        open_webui_data:
+
+  - path: /opt/hoiltd/ollama-openwebui/scripts/start.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/hoiltd/ollama-openwebui
+      docker compose up -d
+      docker compose ps
+
+  - path: /opt/hoiltd/ollama-openwebui/scripts/stop.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/hoiltd/ollama-openwebui
+      docker compose down
+
+  - path: /opt/hoiltd/ollama-openwebui/scripts/status.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/hoiltd/ollama-openwebui
+      echo "=== systemd ==="
+      systemctl status hoiltd-ollama-openwebui.service --no-pager || true
+      echo
+      echo "=== docker compose config ==="
+      docker compose config --quiet && echo "Compose config: OK" || echo "Compose config: FAILED"
+      echo
+      echo "=== docker containers ==="
+      docker ps || true
+      echo
+      echo "=== docker images ==="
+      docker images || true
+      echo
+      echo "=== ports ==="
+      ss -tulpn | grep -E '3000|11434' || true
+
+  - path: /opt/hoiltd/ollama-openwebui/scripts/logs.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd /opt/hoiltd/ollama-openwebui
+      docker compose logs -f --tail=200
+
+  - path: /opt/hoiltd/ollama-openwebui/README.md
+    owner: root:root
+    permissions: '0644'
+    content: |
+      # HOI Ollama with OpenWebUI
+
+      This VM provides an Ollama and OpenWebUI configuration on Ubuntu 24.04 LTS.
+
+      ## Important first-run note
+
+      For Marketplace image cleanliness, container images are not pre-pulled in the captured image.
+      On first use after deployment, enable and start the service to pull and run the containers:
+
+      sudo systemctl enable --now hoiltd-ollama-openwebui.service
+
+      ## Web UI
+
+      http://<vm-public-ip>:3000
+
+      Azure NSG must allow inbound TCP 3000.
+
+      ## Security
+
+      OpenWebUI is exposed on TCP 3000.
+      Ollama is bound locally to 127.0.0.1:11434 and should not be opened publicly.
+
+      ## Service management
+
+      sudo systemctl status hoiltd-ollama-openwebui.service
+      sudo systemctl enable --now hoiltd-ollama-openwebui.service
+      sudo systemctl stop hoiltd-ollama-openwebui.service
+      sudo systemctl restart hoiltd-ollama-openwebui.service
+
+      ## Health/status
+
+      /opt/hoiltd/ollama-openwebui/scripts/status.sh
+
+      ## Models
+
+      No model is preloaded. After the containers are running, pull a model such as:
+
+      docker exec -it hoiltd-ollama ollama pull llama3.2:3b
+
+  - path: /etc/systemd/system/hoiltd-ollama-openwebui.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=HOI Ollama with OpenWebUI
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      WorkingDirectory=/opt/hoiltd/ollama-openwebui
+      ExecStart=/usr/bin/docker compose up -d
+      ExecStop=/usr/bin/docker compose down
+      ExecReload=/usr/bin/docker compose restart
+      TimeoutStartSec=0
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /opt/hoiltd/ollama-openwebui/scripts
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker msalsouri || true
+  - systemctl daemon-reload
+  - systemctl disable hoiltd-ollama-openwebui.service || true
+  - ufw allow OpenSSH
+  - ufw allow 3000/tcp
+  - ufw deny 11434/tcp
+  - ufw --force enable
+  - docker --version > /opt/hoiltd/ollama-openwebui/docker-version.txt
+  - docker compose version > /opt/hoiltd/ollama-openwebui/docker-compose-version.txt
+  - cd /opt/hoiltd/ollama-openwebui && docker compose config --quiet
+  - docker ps > /opt/hoiltd/ollama-openwebui/docker-ps-before-capture.txt
+  - docker images > /opt/hoiltd/ollama-openwebui/docker-images-before-capture.txt
+  - echo "HOI Ollama with OpenWebUI thin cloud-init completed at $(date -u). App service intentionally disabled and containers intentionally not started before image capture." > /opt/hoiltd/ollama-openwebui/cloud-init-complete.txt
+
+final_message: "HOI Ollama with OpenWebUI thin provisioning complete. App service disabled; containers not started."
