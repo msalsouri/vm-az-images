@@ -1,0 +1,79 @@
+<h2>Ollama with OpenWebUI on Ubuntu 24.04 LTS</h2>
+
+<p><strong>Ollama with OpenWebUI</strong> is a self-hosted AI chat platform for Azure, designed to help developers, IT administrators, consultants, and teams deploy a private AI chat environment using Ubuntu 24.04 LTS, Docker, Open WebUI, and Ollama.</p>
+
+<h3>What is this?</h3>
+
+<p>This offer provides a clean Ubuntu 24.04 LTS virtual machine image with Docker, Docker Compose, Open WebUI, and Ollama configuration prepared for first-run deployment. Open WebUI provides the browser-based interface, while Ollama provides the local model runtime.</p>
+
+<p>No large language model is preloaded in this image. After deployment, customers can choose and pull the Ollama-compatible model that best fits their VM size, licensing requirements, and workload.</p>
+
+<h3>First-run instructions</h3>
+
+<p>For Marketplace image cleanliness, the application containers are not pre-pulled or started in the captured image. After deploying the VM, complete these steps:</p>
+
+<ol>
+  <li>Allow inbound TCP port <strong>3000</strong> in the Azure Network Security Group.</li>
+  <li>Connect to the VM using SSH.</li>
+  <li>Start the application service:</li>
+</ol>
+
+<pre>sudo systemctl enable --now hoiltd-ollama-openwebui.service</pre>
+
+<p>The first startup may take a few minutes while Docker pulls the required Open WebUI and Ollama containers.</p>
+
+<p>After startup, open the web interface:</p>
+
+<pre>http://&lt;your-vm-public-ip&gt;:3000</pre>
+
+<p>To pull a model, run:</p>
+
+<pre>docker exec -it hoiltd-ollama ollama pull llama3.2:3b</pre>
+
+<h3>Architecture</h3>
+
+<ul>
+  <li><strong>Open WebUI:</strong> browser-based chat interface on port 3000</li>
+  <li><strong>Ollama:</strong> local model runtime bound to localhost on port 11434</li>
+  <li><strong>Docker Compose:</strong> repeatable service management</li>
+  <li><strong>Systemd:</strong> controlled startup after deployment</li>
+</ul>
+
+<h3>Recommended VM sizing</h3>
+
+<ul>
+  <li><strong>Basic testing:</strong> 2 vCPU and 8 GB RAM</li>
+  <li><strong>Recommended start:</strong> 4 vCPU and 16 GB RAM</li>
+  <li><strong>Larger models:</strong> 8+ vCPU and 32 GB+ RAM, or a suitable GPU-enabled VM</li>
+</ul>
+
+<h3>Who is it for?</h3>
+
+<ul>
+  <li>Developers and AI engineers</li>
+  <li>IT administrators evaluating private AI deployments</li>
+  <li>Consultants delivering AI proof-of-concepts</li>
+  <li>Small teams, training labs, and internal innovation projects</li>
+</ul>
+
+<h3>Why use this image?</h3>
+
+<ul>
+  <li>Ubuntu 24.04 LTS base system</li>
+  <li>Open WebUI and Ollama configuration prepared</li>
+  <li>Docker Compose based deployment</li>
+  <li>Ollama backend bound locally rather than exposed publicly</li>
+  <li>No preloaded model, giving customers control over model choice</li>
+</ul>
+
+<h3>Support</h3>
+
+<p>Home & Office Improvements Ltd provides support for deployment guidance, first-run configuration, service checks, firewall review, and general VM usage related to this image.</p>
+
+<p>Customers remain responsible for Azure infrastructure costs, VM sizing, model licensing, data governance, and production hardening.</p>
+
+<p>Email: info@hoiltd.com</p>
+
+<h3>Important note</h3>
+
+<p>This image does not include a preloaded LLM model. Start the service after deployment and pull a model appropriate for your VM size and workload.</p>
